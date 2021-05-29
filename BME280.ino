@@ -31,6 +31,7 @@ WiFiClient client;
 //MQTT
 const char* mqtt_server = "YOUR_MQTT_BROKER_IP_ADDRESS";
 const int mqttPort = 1883;
+long lastMsg = 0;
 PubSubClient MQTTclient(client);
 
 void setup() 
@@ -89,7 +90,7 @@ void reconnect() {
     if (MQTTclient.connect("ESP8266Client")) {
       Serial.println("connected");
       // Subscribe
-      MQTTclient.subscribe("esp32/output");
+      //MQTTclient.subscribe("esp32/output");
     } else {
       Serial.print("failed, rc=");
       Serial.print(MQTTclient.state());
@@ -120,7 +121,7 @@ void loop()
     char drukString[8];
     char vochtString[8];
     dtostrf(temp, 1, 2, tempString);
-    dtostrff(druk, 1, 2, drukString);
+    dtostrf(druk, 1, 2, drukString);
     dtostrf(vocht, 1, 2, vochtString);
   
     //TFT print
