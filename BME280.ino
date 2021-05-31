@@ -8,7 +8,8 @@
     https://github.com/farmerkeith/BMP280-library
   
   28-05-2021: Added wifi.
-  29-05-2021: Added MQTT. 
+  29-05-2021: Added MQTT.
+  31-05-2021: Changed the MQTT topic and the publish statement.
 ************************************************************************/
 #include <M5StickC.h>
 #include <farmerkeith_BMP280.h>
@@ -141,10 +142,8 @@ void loop()
     Serial.print("Vocht: ");
     Serial.println(vochtString);
   
-    // Send over with MQTT  
-    MQTTclient.publish("esp32/temperatuur", tempString);
-    MQTTclient.publish("esp32/druk", drukString);
-    MQTTclient.publish("esp32/vocht", vochtString);
+    // Send temperatuur;vocht over with MQTT topic M5-1
+    MQTTclient.publish("M5-1", strcat(strcat(tempString,puntkomma),vochtString));
     
     if(textColor==YELLOW) textColor=GREEN;
     else textColor=YELLOW;
