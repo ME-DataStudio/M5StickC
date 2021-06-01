@@ -10,12 +10,14 @@
   28-05-2021: Added wifi.
   29-05-2021: Added MQTT.
   31-05-2021: Changed the MQTT topic and the publish statement.
+              Added JSON.
 ************************************************************************/
 #include <M5StickC.h>
 #include <farmerkeith_BMP280.h>
 #include <Wire.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 
 //BME sensor
 BME280 bme;
@@ -33,6 +35,8 @@ WiFiClient client;
 const char* mqtt_server = "YOUR_MQTT_BROKER_IP_ADDRESS";
 const int mqttPort = 1883;
 long lastMsg = 0;
+StaticJsonDocument<200> doc;
+char mqttPayload[256];
 PubSubClient MQTTclient(client);
 
 void setup() 
@@ -118,12 +122,6 @@ void loop()
     double temp;
     double druk;
     double vocht=bme.readHumidity(temp,druk);
-    char tempString[8];
-    char drukString[8];
-    char vochtString[8];
-    dtostrf(temp, 1, 2, tempString);
-    dtostrf(druk, 1, 2, drukString);
-    dtostrf(vocht, 1, 2, vochtString);
   
     //TFT print
     M5.Lcd.setCursor(0, 0);
@@ -143,7 +141,12 @@ void loop()
     Serial.println(vochtString);
   
     // Send temperatuur;vocht over with MQTT topic M5-1
-    MQTTclient.publish("M5-1", strcat(strcat(tempString,puntkomma),vochtString));
+    //JSON
+    doc["t"]=temp;
+    doc["v"]=vocht;
+    //doc.printTo(Serial);
+    size_t n = serializeJson(doc, mqttPayload);
+    MQTTclient.publish("M5-1",mqttPayload, n);
     
     if(textColor==YELLOW) textColor=GREEN;
     else textColor=YELLOW;
