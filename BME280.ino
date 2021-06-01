@@ -11,6 +11,7 @@
   29-05-2021: Added MQTT.
   31-05-2021: Changed the MQTT topic and the publish statement.
               Added JSON.
+  01-06-2021: Try only 2 times to connect with MQTT server. Continue connected or not connected.
 ************************************************************************/
 #include <M5StickC.h>
 #include <farmerkeith_BMP280.h>
@@ -34,6 +35,7 @@ WiFiClient client;
 //MQTT
 const char* mqtt_server = "YOUR_MQTT_BROKER_IP_ADDRESS";
 const int mqttPort = 1883;
+int connCount = 0; //count connection attempts
 long lastMsg = 0;
 StaticJsonDocument<200> doc;
 char mqttPayload[256];
@@ -89,19 +91,23 @@ int textColor=YELLOW;
 
 void reconnect() {
   // Loop until we're reconnected
-  while (!MQTTclient.connected()) {
+  while (!MQTTclient.connected() && connCount < 2) {
+    M5.Lcd.fillScreen( BLACK );
     Serial.print("Attempting MQTT connection...");
+    M5.Lcd.print("Attempting MQTT connection...");
     // Attempt to connect
     if (MQTTclient.connect("ESP8266Client")) {
       Serial.println("connected");
+      M5.Lcd.print("Connected");
       // Subscribe
       //MQTTclient.subscribe("esp32/output");
     } else {
       Serial.print("failed, rc=");
       Serial.print(MQTTclient.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
+      Serial.println(" try again in 3 seconds");
+      // Wait 3 seconds before retrying
+      delay(3000);
+      connCount +=1;
     }
   }
 }
@@ -110,6 +116,7 @@ void reconnect() {
 void loop() 
 {
   if (!MQTTclient.connected()) {
+    connCount +=1;
     reconnect();
   }
   MQTTclient.loop();
@@ -142,12 +149,14 @@ void loop()
   
     // Send temperatuur;vocht over with MQTT topic M5-1
     //JSON
-    doc["t"]=temp;
-    doc["v"]=vocht;
-    //doc.printTo(Serial);
-    size_t n = serializeJson(doc, mqttPayload);
-    MQTTclient.publish("M5-1",mqttPayload, n);
+    if (connCount <2) {
+      doc["t"]=temp;
+      doc["v"]=vocht;
+      size_t n = serializeJson(doc, mqttPayload);
+      MQTTclient.publish("M5-1",mqttPayload, n);
+    }
     
+    //change textcolor
     if(textColor==YELLOW) textColor=GREEN;
     else textColor=YELLOW;
     M5.Lcd.setTextColor(textColor,BLACK);  
